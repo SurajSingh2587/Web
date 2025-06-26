@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spend Bill Gates' Money - Interactive Spending Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        .item-image {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            border-radius: 12px;
+            margin: 0 auto 16px auto;
+        }
+        .money-display {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .item-card {
+            transition: all 0.3s ease;
+        }
+        .item-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .receipt {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .receipt::-webkit-scrollbar {
+            width: 6px;
+        }
+        .receipt::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .receipt::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .receipt::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Spend Bill Gates' Money</h1>
+            <div class="text-center">
+                <div class="text-5xl font-bold money-display" id="moneyLeft">$100,000,000,000</div>
+                <p class="text-gray-600 mt-2">Money Left to Spend</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Items Grid -->
+            <div class="flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="itemsGrid">
+                    <!-- Items will be dynamically generated here -->
+                </div>
+            </div>
+
+            <!-- Receipt Sidebar -->
+            <div class="w-full lg:w-80">
+                <div class="bg-white rounded-lg shadow-lg p-6 sticky top-32">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-receipt mr-2 text-blue-500"></i>
+                        Receipt
+                    </h2>
+                    
+                    <div class="receipt" id="receiptItems">
+                        <p class="text-gray-500 text-center py-8">No items purchased yet</p>
+                    </div>
+                    
+                    <div class="border-t pt-4 mt-4">
+                        <div class="flex justify-between items-center text-lg font-bold">
+                            <span>Total Spent:</span>
+                            <span class="text-red-500" id="totalSpent">$0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-gray-600 mt-2">
+                            <span>Items Purchased:</span>
+                            <span id="totalItems">0</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="resetGame()" class="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-redo mr-2"></i>Reset Game
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let moneyLeft = 100000000000; // $100 billion
+        let totalSpent = 0;
+        let purchasedItems = {};
+
+        // Items data
+        const items = [
+            { name: "Big Mac", price: 2, icon: "🍔" },
+            { name: "Flip Flops", price: 3, icon: "🩴" },
+            { name: "Coca-Cola Pack", price: 5, icon: "🥤" },
+            { name: "Movie Ticket", price: 12, icon: "🎬" },
+            { name: "Book", price: 15, icon: "📚" },
+            { name: "Lobster Dinner", price: 45, icon: "🦞" },
+            { name: "Video Game", price: 60, icon: "🎮" },
+            { name: "Amazon Echo", price: 99, icon: "🔊" },
+            { name: "Year of Netflix", price: 100, icon: "📺" },
+            { name: "Air Jordans", price: 125, icon: "👟" },
+            { name: "Airpods", price: 199, icon: "🎧" },
+            { name: "Gaming Console", price: 299, icon: "🎮" },
+            { name: "Drone", price: 350, icon: "🚁" },
+            { name: "Smartphone", price: 699, icon: "📱" },
+            { name: "Bike", price: 800, icon: "🚲" },
+            { name: "Kitten", price: 1500, icon: "🐱" },
+            { name: "Puppy", price: 1500, icon: "🐶" },
+            { name: "Auto Rickshaw", price: 2300, icon: "🛺" },
+            { name: "Horse", price: 2500, icon: "🐎" },
+            { name: "Acre of Farmland", price: 3000, icon: "🌾" },
+            { name: "Designer Handbag", price: 5500, icon: "👜" },
+            { name: "Hot Tub", price: 6000, icon: "🛁" },
+            { name: "Luxury Wine", price: 7000, icon: "🍷" },
+            { name: "Diamond Ring", price: 10000, icon: "💍" },
+            { name: "Jet Ski", price: 12000, icon: "🚤" },
+            { name: "Rolex", price: 15000, icon: "⌚" },
+            { name: "Ford F-150", price: 30000, icon: "🚙" },
+            { name: "Tesla", price: 75000, icon: "🚗" },
+            { name: "Monster Truck", price: 150000, icon: "🚛" },
+            { name: "Ferrari", price: 250000, icon: "🏎️" },
+            { name: "Single Family Home", price: 300000, icon: "🏠" },
+            { name: "Gold Bar", price: 700000, icon: "🏅" },
+            { name: "McDonalds Franchise", price: 1500000, icon: "🍟" },
+            { name: "Superbowl Ad", price: 5250000, icon: "📢" },
+            { name: "Yacht", price: 7500000, icon: "🛥️" },
+            { name: "M1 Abrams", price: 8000000, icon: "🛡️" },
+            { name: "Formula 1 Car", price: 15000000, icon: "🏁" },
+            { name: "Apache Helicopter", price: 31000000, icon: "🚁" },
+            { name: "Mansion", price: 45000000, icon: "🏰" },
+            { name: "Make a Movie", price: 100000000, icon: "🎥" },
+            { name: "Boeing 747", price: 148000000, icon: "✈️" },
+            { name: "Mona Lisa", price: 780000000, icon: "🖼️" },
+            { name: "Skyscraper", price: 850000000, icon: "🏢" },
+            { name: "Cruise Ship", price: 930000000, icon: "🚢" },
+            { name: "NBA Team", price: 2120000000, icon: "🏀" }
+        ];
+
+        // Initialize purchased items
+        items.forEach(item => {
+            purchasedItems[item.name] = 0;
+        });
+
+        // Format number as currency
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        // Update displays
+        function updateDisplays() {
+            document.getElementById('moneyLeft').textContent = formatMoney(moneyLeft);
+            document.getElementById('totalSpent').textContent = formatMoney(totalSpent);
+            
+            const totalItems = Object.values(purchasedItems).reduce((sum, count) => sum + count, 0);
+            document.getElementById('totalItems').textContent = totalItems;
+            
+            updateReceipt();
+        }
+
+        // Update receipt
+        function updateReceipt() {
+            const receiptDiv = document.getElementById('receiptItems');
+            const purchasedItemsList = Object.entries(purchasedItems).filter(([name, count]) => count > 0);
+            
+            if (purchasedItemsList.length === 0) {
+                receiptDiv.innerHTML = '<p class="text-gray-500 text-center py-8">No items purchased yet</p>';
+                return;
+            }
+            
+            receiptDiv.innerHTML = purchasedItemsList.map(([name, count]) => {
+                const item = items.find(i => i.name === name);
+                const totalPrice = item.price * count;
+                return `
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <div>
+                            <div class="font-medium">${item.icon} ${name}</div>
+                            <div class="text-sm text-gray-500">${formatMoney(item.price)} × ${count}</div>
+                        </div>
+                        <div class="font-bold">${formatMoney(totalPrice)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Buy item
+        function buyItem(itemName) {
+            const item = items.find(i => i.name === itemName);
+            if (moneyLeft >= item.price) {
+                moneyLeft -= item.price;
+                totalSpent += item.price;
+                purchasedItems[itemName]++;
+                updateDisplays();
+                updateItemDisplay(itemName);
+            }
+        }
+
+        // Sell item
+        function sellItem(itemName) {
+            const item = items.find(i => i.name === itemName);
+            if (purchasedItems[itemName] > 0) {
+                moneyLeft += item.price;
+                totalSpent -= item.price;
+                purchasedItems[itemName]--;
+                updateDisplays();
+                updateItemDisplay(itemName);
+            }
+        }
+
+        // Update individual item display
+        function updateItemDisplay(itemName) {
+            const quantityElement = document.getElementById(`quantity-${itemName.replace(/\s+/g, '-')}`);
+            const buyButton = document.getElementById(`buy-${itemName.replace(/\s+/g, '-')}`);
+            const sellButton = document.getElementById(`sell-${itemName.replace(/\s+/g, '-')}`);
+            
+            if (quantityElement) {
+                const count = purchasedItems[itemName];
+                quantityElement.textContent = count > 0 ? count : '';
+                quantityElement.style.display = count > 0 ? 'block' : 'none';
+            }
+            
+            const item = items.find(i => i.name === itemName);
+            if (buyButton) {
+                buyButton.disabled = moneyLeft < item.price;
+                buyButton.className = moneyLeft < item.price 
+                    ? 'px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed'
+                    : 'px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors';
+            }
+            
+            if (sellButton) {
+                sellButton.disabled = purchasedItems[itemName] === 0;
+                sellButton.className = purchasedItems[itemName] === 0
+                    ? 'px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed'
+                    : 'px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors';
+            }
+        }
+
+        // Generate items grid
+        function generateItemsGrid() {
+            const grid = document.getElementById('itemsGrid');
+            grid.innerHTML = items.map(item => {
+                const itemId = item.name.replace(/\s+/g, '-');
+                return `
+                    <div class="item-card bg-white rounded-lg shadow-lg p-6 text-center">
+                        <div class="item-image">${item.icon}</div>
+                        <h3 class="font-bold text-lg mb-2">${item.name}</h3>
+                        <p class="text-2xl font-bold text-green-600 mb-4">${formatMoney(item.price)}</p>
+                        
+                        <div class="flex gap-2 mb-4">
+                            <button id="sell-${itemId}" onclick="sellItem('${item.name}')" 
+                                    class="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" disabled>
+                                <i class="fas fa-minus"></i> Sell
+                            </button>
+                            <button id="buy-${itemId}" onclick="buyItem('${item.name}')" 
+                                    class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
+                                <i class="fas fa-plus"></i> Buy
+                            </button>
+                        </div>
+                        
+                        <div id="quantity-${itemId}" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-bold" style="display: none;">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Reset game
+        function resetGame() {
+            if (confirm('Are you sure you want to reset the game?')) {
+                moneyLeft = 100000000000;
+                totalSpent = 0;
+                items.forEach(item => {
+                    purchasedItems[item.name] = 0;
+                });
+                updateDisplays();
+                items.forEach(item => updateItemDisplay(item.name));
+            }
+        }
+
+        // Initialize game
+        generateItemsGrid();
+        updateDisplays();
+    </script>
+</body>
+</html>
